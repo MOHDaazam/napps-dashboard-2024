@@ -1,0 +1,102 @@
+.settle {
+    display: flex;
+    justify-content: center;
+}
+
+.settled {
+    display: flex;
+    justify-content: center;
+}
+
+.vender-cash {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 65px;
+}
+
+.cod {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+}
+
+i {
+    margin-left: -2px;
+}
+
+.cash h6 {
+    border: solid 2px red;
+    color: red;
+    border-radius: 5px;
+    padding: 1px 16px 3px 8px;
+    margin-top: 14px;
+    font-size: revert;
+}
+
+.shipping-details {
+    padding-left: 16px;
+}
+
+.shipping-details p {
+    font-weight: 600;
+    margin-bottom: -1px;
+}
+
+.button button {
+    margin-bottom: 20px;
+}
+
+.order-id h5 {
+    margin-bottom: -11px;
+}
+
+.roder-id p {
+    margin-bottom: 27px;
+}
+
+.cash {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: -34px;
+    padding: 6px 18px 0px 16px;
+}
+
+.seller i {
+    font-size: initial;
+    padding: 8px 3px 16px 16px;
+}
+
+.seller-name {
+    padding: 31px 0px 0px 15px;
+}
+
+.product-card {
+    display: grid;
+    grid-template-columns: 25% 25% 25% 25%;
+}
+
+@media screen and (max-width: 767px) {
+    .switch {
+        padding: 0px;
+        margin-left: 15px;
+    }
+
+    .product-card {
+        grid-template-columns: 70% 70%;
+
+    }
+}
+
+@media screen and (min-width:767px) and (max-width:1023px) {
+    .switch {
+        padding: 51px;
+        margin-left: -38px;
+    }
+
+    .product-card {
+        grid-template-columns: 72% 71% 71%;
+        ;
+    }
+}

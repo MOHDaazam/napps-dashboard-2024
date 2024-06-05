@@ -1,0 +1,9 @@
+.reset-apply {
+    display: flex;
+    justify-content: end;
+    padding: 11px;
+}
+
+.reset-apply button {
+    margin-right: 10px;
+}

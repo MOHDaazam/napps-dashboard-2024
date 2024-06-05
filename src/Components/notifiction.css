@@ -1,0 +1,39 @@
+.title {
+    margin-bottom: 25px;
+}
+
+.message {
+    margin-bottom: 25px;
+}
+
+.send-now {
+    margin-bottom: 25px;
+}
+
+.send-now button {
+    width: 100%;
+}
+
+.schedule button {
+    width: 100%;
+    background-color: #fff;
+    color: blue;
+}
+
+.schedule {
+    margin-bottom: 30px;
+}
+
+.send-notifiction h4 {
+    margin-bottom: 20px;
+    margin-top: 30px;
+}
+
+.recent-message button {
+    width: 100%;
+    background-color: darkgray;
+    border: none;
+    padding: 7px 10px 9px 17px;
+    border-radius: 5px;
+    color: #fff;
+}
