@@ -262,7 +262,9 @@ const WhatsAppSend = (props) => {
     const [campaignNames, setCampaignNames] = useState([]);
     const [selectedCampaign, setSelectedCampaign] = useState('');
     const [lastMessageTo, setLastMessageTo] = useState('');
-    const [campaignsData, setCampaignsData] = useState({}); // State to store retrieved data
+    const [campaignsData, setCampaignsData] = useState({});
+    const [updatedConfigJSON, setUpdatedConfig] = useState('');
+    const [isEditingCampaign, setEditCampaign] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const audioRef = useRef(null); // Reference to the ReactAudioPlayer component
     const sendCounterRef = useRef(0)
@@ -284,6 +286,18 @@ const WhatsAppSend = (props) => {
     const handleStop = () => {
         setIsPlaying(false);
     };
+
+    const updatedConfigSave = async () => {
+        const campaignConfigRef = ref(firebaseDb, 'whatsapp-campaign/saved/' + selectedCampaign + '/config');
+        try {
+            await set(campaignConfigRef, JSON.parse(updatedConfigJSON))
+            setEditCampaign(false)
+        } catch (e) {
+            alert(String(e))
+        }
+
+
+    }
 
     const showAndSetCustomerData = (campaignName, fetchConfigOnly = true) => {
         const campaignConfigRef = ref(firebaseDb, 'whatsapp-campaign/saved/' + campaignName + '/config'); // Create unique reference
@@ -425,7 +439,7 @@ const WhatsAppSend = (props) => {
 
                     if (status) {
                         setLastMessageTo(Phone + ' sent!');
-                        setLogs([...logs, { message: `Sent message to ${Name} :: ${Phone} :: ${status} :: ${getDate()}` }]);
+                        setLogs([...logs, { message: `Success :: ${Name} :: ${Phone} :: ${getDate()}` }]);
                         const campaignCustomerRef = ref(firebaseDb, campaignPath);
                         await set(campaignCustomerRef, "Yes")
                         const campaignConfigCustomerRef = ref(firebaseDb, campaignConfigPath);
@@ -439,11 +453,11 @@ const WhatsAppSend = (props) => {
                             await set(campaignConfigCustomerRef, index + 1)
                         }
                         setLastMessageTo(Phone + response.data?.message);
-                        setLogs([...logs, { message: `${response.data?.message} ${Name} :: ${Phone} :: ${status} :: ${getDate()}` }]);
+                        setLogs([...logs, { message: `${response.data?.message} ${Name} :: ${Phone} :: ${getDate()}` }]);
                     } else {
                         console.log(response);
                         setLastMessageTo(Phone + ' failed!');
-                        setLogs([...logs, { message: `Failed to sent ${Name} :: ${Phone}  :: ${getDate()}` }]);
+                        setLogs([...logs, { message: `Failed :: ${Name} :: ${Phone}  :: ${getDate()}` }]);
                     }
                     if (campaignConfig.deleteMsg && status === 'success') {
                         // Send an API request to delete the chat if supported by your API
@@ -577,7 +591,7 @@ const WhatsAppSend = (props) => {
                             style={{ maxHeight: '200px', background: 'black', padding: '1rem' }}>
                             <button style={{ position: 'absolute', right: 120 }} onClick={() => setLogs([])}>clear</button>
                             {logs.reverse().map(l => (<p style={{ color: 'white', marginBottom: '0.1rem' }}>
-                                {`${selectedCampaign} :: ${l.message}`}
+                                {`${l.message}`}
                             </p>))}
                         </pre>}
                     <h6>Names:</h6>
@@ -587,7 +601,9 @@ const WhatsAppSend = (props) => {
                                 <Accordion.Header style={{ background: 'white' }} onClick={() => {
                                     if (totalPhoneNumbersRef.current) {
                                         totalPhoneNumbersRef.current.textContent = 'Fetch Now'
-                                    } showAndSetCustomerData(name)
+                                    }
+                                    setLogs([])
+                                    showAndSetCustomerData(name)
                                 }}>{name}</Accordion.Header>
                                 <Accordion.Body>
                                     <Row className="justify-content-end mt-3">
@@ -610,8 +626,29 @@ const WhatsAppSend = (props) => {
                                             </Button>
                                         </Col>
                                     </Row><br />
-                                    <Button onClick={() => { showAndSetCustomerData(name, false) }}>Fetch Customers and Message Sent Status</Button><br /><br />
-                                    <pre>{JSON.stringify(modifiedCampaignsData, null, 2)}</pre>
+                                    <Button className='brn btn-warning' onClick={() => { showAndSetCustomerData(name, false) }}>Fetch Customers and Message Sent Status</Button><br /><br />
+                                    <Button onClick={() => { setEditCampaign(!isEditingCampaign) }}>{isEditingCampaign ? 'Cancel Editing' : 'Edit Campaign Setting'}</Button><br /><br />
+                                    {/* <p>{JSON.stringify(campaignsData[selectedCampaign]?.config)}</p> */}
+                                    {isEditingCampaign ?
+                                        <>
+                                            <p style={{ color: 'orange' }}>Please be cautious, don't change "campaignName" ever!</p>
+                                            <textarea
+                                                className='form-control'
+                                                style={{ width: '100%' }}
+                                                rows={26} // Adjust rows as needed
+                                                cols={10} // Adjust cols as needed
+                                                onChange={(evt) => { setUpdatedConfig(evt.target.value) }}
+                                                value={updatedConfigJSON.length ? updatedConfigJSON : JSON.stringify(campaignsData[selectedCampaign]?.config, null, 2)} /><br />
+                                            <Button className='btn-success' onClick={async () => {
+                                                const status = window.confirm(`You are updating ${selectedCampaign}!`)
+                                                if (status) {
+                                                    await updatedConfigSave()
+                                                }
+                                            }}>Save</Button><br /><br />
+                                        </>
+                                        :
+                                        <pre>{JSON.stringify(modifiedCampaignsData, null, 2)}</pre>
+                                    }
                                 </Accordion.Body>
                             </Accordion.Item>
 
