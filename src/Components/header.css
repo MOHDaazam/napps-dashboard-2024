@@ -610,7 +610,7 @@ h6 {
   # Sidebar
   --------------------------------------------------------------*/
 .sidebar {
-  position: fixed;
+  position: absolute;
   top: 60px;
   left: 0;
   bottom: 0;
@@ -626,9 +626,9 @@ h6 {
 }
 
 @media (max-width: 1199px) {
-  .sidebar {
+  /* .sidebar {
     left: -300px;
-  }
+  } */
 }
 
 .sidebar::-webkit-scrollbar {

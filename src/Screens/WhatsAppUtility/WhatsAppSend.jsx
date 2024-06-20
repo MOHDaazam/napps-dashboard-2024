@@ -254,7 +254,7 @@ const Logs = ({ logs }) => {
 };
 
 const activePromisesOf = {}
-const sendMessageAbortController = new AbortController();
+let sendMessageAbortController = null;
 const WhatsAppSend = (props) => {
     const [campaignConfig, setCampaignConfig] = useState(null);
     const [sectionSelected, showSection] = useState('create-campaign');
@@ -274,9 +274,9 @@ const WhatsAppSend = (props) => {
         if (isPlaying) {
             audioRef.current = 'play';
             setIsPlaying(false);
-
         } else {
             setIsPlaying(true)
+            sendMessageAbortController = new AbortController();
         }
 
     };
@@ -383,62 +383,80 @@ const WhatsAppSend = (props) => {
                         reject(new Error('Promise cancelled'));
                         return;
                     }
-                    try {
-                        if (campaignConfig?.images) {
-                            payload.images = campaignConfig.images
-                        }
-                        const response = await axios.post(`${serviceUrl}/${!sendOnlyText ? 'send-media' : 'send-message'}`,
-                            payload, { signal: sendMessageAbortController.signal });
-                        const status = response.data.status;
-                        console.log(status);
-                        const campaignPath = 'whatsapp-campaign/saved/' + campaignConfig.campaignName + '/customers/' + Phone + '/Sent';
-                        const campaignConfigPath = 'whatsapp-campaign/saved/' + campaignConfig.campaignName + '/config/startsFrom';
-                        if (status) {
-                            setLastMessageTo(Phone + ' sent!');
-                            setLogs([...logs, { message: `Sent message to ${Name} :: ${Phone} :: ${status} :: ${getDate()}` }]);
 
-                            // Assuming firebaseDb is your Firebase Database instance
-                            const campaignCustomerRef = ref(firebaseDb, campaignPath);
-                            // Update the ref to "Yes"
-                            await set(campaignCustomerRef, "Yes")
-                            const campaignConfigCustomerRef = ref(firebaseDb, campaignConfigPath);
-                            // Update the ref to "Yes"
-                            await set(campaignConfigCustomerRef, Number(index + 1))
-                        } else if (!status) {
-                            console.log(response);
-                            if (response.data?.message.includes('The number is not registered')) {
+                    if (campaignConfig?.images) {
+                        payload.images = campaignConfig.images
+                    }
+                    let response = null
+                    const campaignPath = 'whatsapp-campaign/saved/' + campaignConfig.campaignName + '/customers/' + Phone + '/Sent';
+                    const campaignConfigPath = 'whatsapp-campaign/saved/' + campaignConfig.campaignName + '/config/startsFrom';
+                    try {
+                        response = await axios.post(`${serviceUrl}/${!sendOnlyText ? 'send-media' : 'send-message'}`,
+                            payload, { signal: sendMessageAbortController.signal });
+                    } catch (error) {
+                        if (error.name !== 'AbortError') {
+                            console.log(error, 'error');
+                            if (error?.message.includes('422')) {
                                 const campaignCustomerRef = ref(firebaseDb, campaignPath);
                                 // Update the ref to "Yes"
                                 await set(campaignCustomerRef, "Yes")
                                 const campaignConfigCustomerRef = ref(firebaseDb, campaignConfigPath);
                                 // Update the ref to "Yes"
-                                await set(campaignConfigCustomerRef, Number(index + 1))
+                                await set(campaignConfigCustomerRef, index + 1)
                             }
-                            setLastMessageTo(Phone + response.data?.message);
-                            setLogs([...logs, { message: `${response.data?.message} ${Name} :: ${Phone} :: ${status} :: ${getDate()}` }]);
-                        } else {
-                            console.log(response);
-                            setLastMessageTo(Phone + ' failed!');
-                            setLogs([...logs, { message: `Failed to sent ${Name} :: ${Phone} :: ${status} :: ${getDate()}` }]);
-                        }
-                        if (campaignConfig.deleteMsg && status === 'success') {
-                            // Send an API request to delete the chat if supported by your API
-                            // try {
-                            //     await axios.post('/delete-chat', { number: stdCode + Phone });
-                            //     setLogs([...logs, { message: `Deleted chat with ${Phone}` }]);
-                            // } catch (error) {
-                            //     console.error('Error deleting chat:', error);
-                            //     setLogs([...logs, { message: `Error deleting chat with ${Phone}`, error }]);
-                            // }
-                        }
-                        resolve();
-                    } catch (error) {
-                        if (error.name !== 'AbortError') {
-                            reject(error); // Handle other errors
+                            setLastMessageTo(Phone + " " + (error?.message.includes('422') && "Not on whatsapp!"));
+                            setLogs([...logs, { message: `${(error?.message.includes('422') && "Not on whatsapp!")} ${Name} :: ${Phone} :: ${getDate()}` }]);
+                        } else if (error.name === 'AbortError') {
+                            setIsPlaying(false)
+                            setLastMessageTo('Aborted by user!')
+                            sendMessageAbortController.abort()
                         }
                     } finally {
                         clearTimeout(timeout);
                     }
+                    const status = response?.data?.status;
+                    console.log(status);
+
+                    if (status) {
+                        setLastMessageTo(Phone + ' sent!');
+                        setLogs([...logs, { message: `Sent message to ${Name} :: ${Phone} :: ${status} :: ${getDate()}` }]);
+
+                        // Assuming firebaseDb is your Firebase Database instance
+                        const campaignCustomerRef = ref(firebaseDb, campaignPath);
+                        // Update the ref to "Yes"
+                        await set(campaignCustomerRef, "Yes")
+                        const campaignConfigCustomerRef = ref(firebaseDb, campaignConfigPath);
+                        // Update the ref to "Yes"
+                        await set(campaignConfigCustomerRef, index + 1)
+                    } else if (!status && typeof status !== 'undefined') {
+                        console.log(response);
+                        if (response.data?.message.includes('The number is not registered')) {
+                            const campaignCustomerRef = ref(firebaseDb, campaignPath);
+                            // Update the ref to "Yes"
+                            await set(campaignCustomerRef, "Yes")
+                            const campaignConfigCustomerRef = ref(firebaseDb, campaignConfigPath);
+                            // Update the ref to "Yes"
+                            await set(campaignConfigCustomerRef, index + 1)
+                        }
+                        setLastMessageTo(Phone + response.data?.message);
+                        setLogs([...logs, { message: `${response.data?.message} ${Name} :: ${Phone} :: ${status} :: ${getDate()}` }]);
+                    } else {
+                        console.log(response);
+                        setLastMessageTo(Phone + ' failed!');
+                        setLogs([...logs, { message: `Failed to sent ${Name} :: ${Phone}  :: ${getDate()}` }]);
+                    }
+                    if (campaignConfig.deleteMsg && status === 'success') {
+                        // Send an API request to delete the chat if supported by your API
+                        // try {
+                        //     await axios.post('/delete-chat', { number: stdCode + Phone });
+                        //     setLogs([...logs, { message: `Deleted chat with ${Phone}` }]);
+                        // } catch (error) {
+                        //     console.error('Error deleting chat:', error);
+                        //     setLogs([...logs, { message: `Error deleting chat with ${Phone}`, error }]);
+                        // }
+                    }
+                    resolve();
+
                 }, sendAt);
             });
         };

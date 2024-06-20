@@ -38,10 +38,13 @@ const CsvUploader = ({ onUpload }) => {
     const saveDataToFirebase = async (e) => {
         e.preventDefault()
         const dataToSave = {}
+        console.log(csvData,'csvData')
         csvData.forEach(record => {
-            if (record['Number']) {
-                dataToSave[record['Number']] = record
+            const contactNumber = record['Number'] ||record['Phone']
+            if (contactNumber) {
+                dataToSave[contactNumber] = record
             }
+            console.log(record)
         })
         if (Object.keys(dataToSave).length > 0) {
             const dataRef = ref(firebaseDb, 'whatsapp-customers/data/' + fileName.replace('.csv', '')); // Create unique reference
@@ -58,7 +61,7 @@ const CsvUploader = ({ onUpload }) => {
             fileInputRef.current = ''
             alert('Saved!')
         } else {
-            alert('Name column not found in ' + fileName)
+            alert('Name or (Phone or Number) column not found in ' + fileName)
         }
 
     };
