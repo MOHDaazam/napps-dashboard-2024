@@ -20,7 +20,7 @@ const login = () => {
                         className="logo d-flex align-items-center w-auto"
                       >
                         <img src="assets/img/logo.png" alt="" />
-                        <h3 style={{ color: 'black' }}>Silver Foil</h3>
+                        <h3 style={{ color: 'black' }}>Napps.in</h3>
                       </a>
                     </div>
                     {/* End Logo */}
