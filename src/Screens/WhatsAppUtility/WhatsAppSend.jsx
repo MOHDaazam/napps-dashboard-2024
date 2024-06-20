@@ -3,11 +3,9 @@ import axios from 'axios'
 import { Form, FormGroup, FormLabel, input, Button, Table, ProgressBar, FormFormLabel, Accordion, Card, Row, Col, } from 'react-bootstrap';
 import { firebaseDb, firebaseStorage } from '../../firebase';
 import { child, get, onValue, orderByValue, ref, remove, set, update } from 'firebase/database';
-import { imageToBase64 } from './utils';
-import firebase from 'firebase/compat/app';
 import { getDownloadURL, getStorage, uploadBytes, ref as stRef } from 'firebase/storage';
 
-const Configuration = ({ onCampaignStart, showSection }) => {
+const Configuration = () => {
     const [campaignName, setCampaignName] = useState('');
     const [fileName, setFileName] = useState('');
     const [maxCount, setMaxCount] = useState(500);
@@ -267,6 +265,8 @@ const WhatsAppSend = (props) => {
     const [campaignsData, setCampaignsData] = useState({}); // State to store retrieved data
     const [isPlaying, setIsPlaying] = useState(false);
     const audioRef = useRef(null); // Reference to the ReactAudioPlayer component
+    const sendCounterRef = useRef(0)
+    const totalPhoneNumbersRef = useRef(0)
 
 
 
@@ -306,6 +306,11 @@ const WhatsAppSend = (props) => {
                 const newData = {}
                 newData[campaignName] = { customers, config: fetchedData }
                 setCampaignsData(newData); // Update state with new data on any change
+                const lastCount = fetchedData?.startsFrom
+                if (sendCounterRef.current) {
+                    sendCounterRef.current.textContent = lastCount;
+                }
+
             });
             return
         }
@@ -322,11 +327,13 @@ const WhatsAppSend = (props) => {
             const newData = {}
             newData[campaignName] = { config: configCamp, customers: fetchedData }
             setCampaignsData(newData); // Update state with new data on any change
+            if (totalPhoneNumbersRef.current) {
+                totalPhoneNumbersRef.current.textContent = Object.keys(fetchedData).length;
+            }
         });
 
     }
-
-    useEffect(() => {
+    const getAndSetCampaigns = () => {
         getCampaignNames()
             .then(names => {
                 console.log(names);
@@ -339,6 +346,9 @@ const WhatsAppSend = (props) => {
             .catch(error => {
                 console.error('Error fetching campaign names:', error);
             });
+    }
+    useEffect(() => {
+        getAndSetCampaigns()
     }, []);
 
     const deleteCampaign = () => {
@@ -357,7 +367,6 @@ const WhatsAppSend = (props) => {
 
     // Function to send a message to a customer
     const sendMessage = async (customer, campaignConfig, index,) => {
-        console.log(customer, 'sendMessage')
         const { stdCode, message, serviceUrl, breathOn, breatheFor, sendOnlyText, images } = campaignConfig;
         let { Phone, Name, Number } = customer; // Assuming message property exists in customer data
         if (Number) {
@@ -376,7 +385,6 @@ const WhatsAppSend = (props) => {
                 const timeout = setTimeout(async () => {
                     console.log(sendMessageAbortController.signal.aborted, 'sendMessageAbortController.signal.aborted')
                     sendMessageAbortController.signal.addEventListener('abort', () => {
-                        console.log('aborted--------->')
                         reject(new Error('Promise cancelled'));
                     });
                     if (sendMessageAbortController.signal.aborted) {
@@ -398,10 +406,8 @@ const WhatsAppSend = (props) => {
                             console.log(error, 'error');
                             if (error?.message.includes('422')) {
                                 const campaignCustomerRef = ref(firebaseDb, campaignPath);
-                                // Update the ref to "Yes"
                                 await set(campaignCustomerRef, "Yes")
                                 const campaignConfigCustomerRef = ref(firebaseDb, campaignConfigPath);
-                                // Update the ref to "Yes"
                                 await set(campaignConfigCustomerRef, index + 1)
                             }
                             setLastMessageTo(Phone + " " + (error?.message.includes('422') && "Not on whatsapp!"));
@@ -420,22 +426,16 @@ const WhatsAppSend = (props) => {
                     if (status) {
                         setLastMessageTo(Phone + ' sent!');
                         setLogs([...logs, { message: `Sent message to ${Name} :: ${Phone} :: ${status} :: ${getDate()}` }]);
-
-                        // Assuming firebaseDb is your Firebase Database instance
                         const campaignCustomerRef = ref(firebaseDb, campaignPath);
-                        // Update the ref to "Yes"
                         await set(campaignCustomerRef, "Yes")
                         const campaignConfigCustomerRef = ref(firebaseDb, campaignConfigPath);
-                        // Update the ref to "Yes"
                         await set(campaignConfigCustomerRef, index + 1)
                     } else if (!status && typeof status !== 'undefined') {
                         console.log(response);
                         if (response.data?.message.includes('The number is not registered')) {
                             const campaignCustomerRef = ref(firebaseDb, campaignPath);
-                            // Update the ref to "Yes"
                             await set(campaignCustomerRef, "Yes")
                             const campaignConfigCustomerRef = ref(firebaseDb, campaignConfigPath);
-                            // Update the ref to "Yes"
                             await set(campaignConfigCustomerRef, index + 1)
                         }
                         setLastMessageTo(Phone + response.data?.message);
@@ -460,10 +460,6 @@ const WhatsAppSend = (props) => {
                 }, sendAt);
             });
         };
-
-
-
-        console.log(index % 8, 'index')
         if ((index + 1) % breathOn === 0) {
             setLastMessageTo('Breathing...')
             await sendMe(breatheFor * 60 * 1000)
@@ -473,9 +469,9 @@ const WhatsAppSend = (props) => {
         } else {
             await sendMe(getRandomNumber(4, 15) * 1000)
         }
-        // finally {
-        //     sendMessageAbortController.abort(); // Abort the request after sending or encountering an error
-        // }
+        if (sendCounterRef.current) {
+            sendCounterRef.current.textContent = index;
+        }
     };
 
     useEffect(() => {
@@ -493,7 +489,6 @@ const WhatsAppSend = (props) => {
         if (!_campaignsData) {
             return
         }
-        console.log(_campaignsData)
         if (!_campaignsData['config']) {
             setIsPlaying(false);
             alert('Camp. Config not found, can not start!')
@@ -507,13 +502,9 @@ const WhatsAppSend = (props) => {
         activePromisesOf[selectedCampaign] = true
         audioRef.current = 'pause';
         setLastMessageTo('Started...');
-        console.log(_campaignsData)
         const campaignConfigRef = ref(firebaseDb, 'whatsapp-campaign/saved/' + selectedCampaign + '/config'); // Create unique reference
         const campaignConfig = (await get(campaignConfigRef)).val()
-        console.log(campaignConfig)
         const selectedCustomers = _campaignsData['customers']
-        console.log(selectedCustomers)
-
         const sortedNumbers = Object.keys(_campaignsData['customers']).sort();
 
         let maxCount = 0
@@ -524,9 +515,7 @@ const WhatsAppSend = (props) => {
             maxCount = campaignConfig.maxCount + campaignConfig.startsFrom
             moreMessage = true
         }
-        console.log(maxCount, 'maxCount')
         for (let i = campaignConfig.startsFrom; i <= maxCount; i++) {
-            console.log(i, maxCount, _isPlaying)
             if (_isPlaying) {
                 if (i >= maxCount) {
                     if (!moreMessage) {
@@ -540,8 +529,7 @@ const WhatsAppSend = (props) => {
                 }
                 const customerNumber = sortedNumbers[i];
                 const customer = selectedCustomers[customerNumber]
-                console.log(!('Sent' in Object.keys(customer)), customer, 'hemlo')
-                console.log(lastMessageTo)
+                console.log(customer)
                 if ((!customer?.sent_cycle || customer?.sent_cycle < campaignConfig.howManyRounds) && !('Sent' in customer)) {
                     await sendMessage(customer, campaignConfig, i, selectedCustomers);
                 } else if ('Sent' in customer) {
@@ -569,7 +557,7 @@ const WhatsAppSend = (props) => {
             <div style={{ display: 'flex' }}>
                 <h4>Whatsapp Send</h4>
                 {sectionSelected === 'create-campaign' ?
-                    <Button variant="primary" style={{ marginLeft: 'auto' }} onClick={() => { showSection('all-campaigns') }}>
+                    <Button variant="primary" style={{ marginLeft: 'auto' }} onClick={() => { getAndSetCampaigns(); showSection('all-campaigns') }}>
                         View/Start Campaigns
                     </Button> : <Button variant="primary" style={{ marginLeft: 'auto' }} onClick={() => { showSection('create-campaign') }}>
                         Create Campaign
@@ -580,6 +568,9 @@ const WhatsAppSend = (props) => {
             {sectionSelected === 'all-campaigns' ? (
                 <div style={{ background: 'white', padding: '2rem' }}>
                     <h5>All Campaigns</h5>
+                    <h6>Selected Campaign : <span style={{ color: 'blue' }}>{selectedCampaign}</span></h6>
+                    <h6>Total Phone Numbers : <span ref={totalPhoneNumbersRef} style={{ color: 'green' }}>0</span></h6>
+                    <h6>Last Count : <span ref={sendCounterRef} style={{ color: 'green' }}>0</span></h6>
                     <h6>Logs:</h6>
                     {logs.length > 0 &&
                         <pre
@@ -593,11 +584,15 @@ const WhatsAppSend = (props) => {
                     <Accordion defaultActiveKey="0">
                         {campaignNames?.map((name, i) => {
                             return <Accordion.Item eventKey={i}>
-                                <Accordion.Header style={{ background: 'white' }} onClick={() => showAndSetCustomerData(name)}>{name}</Accordion.Header>
+                                <Accordion.Header style={{ background: 'white' }} onClick={() => {
+                                    if (totalPhoneNumbersRef.current) {
+                                        totalPhoneNumbersRef.current.textContent = 'Fetch Now'
+                                    } showAndSetCustomerData(name)
+                                }}>{name}</Accordion.Header>
                                 <Accordion.Body>
                                     <Row className="justify-content-end mt-3">
                                         <Col xs={6}>
-                                            <span>Status : <span style={{ color: 'orange', fontWeight: '600' }}>{lastMessageTo}</span></span>
+                                            <span>Status : <span style={{ color: 'blue', fontWeight: '600' }}>{lastMessageTo}</span></span>
                                         </Col>
                                         <Col xs={2}>
                                             <Button variant="primary" onClick={handlePlayPause} size="sm">
