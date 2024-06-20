@@ -571,7 +571,11 @@ const WhatsAppSend = (props) => {
             <div style={{ display: 'flex' }}>
                 <h4>Whatsapp Send</h4>
                 {sectionSelected === 'create-campaign' ?
-                    <Button variant="primary" style={{ marginLeft: 'auto' }} onClick={() => { getAndSetCampaigns(); showSection('all-campaigns') }}>
+                    <Button variant="primary" style={{ marginLeft: 'auto' }}
+                        onClick={() => {
+                            getAndSetCampaigns();
+                            showSection('all-campaigns')
+                        }}>
                         View/Start Campaigns
                     </Button> : <Button variant="primary" style={{ marginLeft: 'auto' }} onClick={() => { showSection('create-campaign') }}>
                         Create Campaign
@@ -603,6 +607,8 @@ const WhatsAppSend = (props) => {
                                         totalPhoneNumbersRef.current.textContent = 'Fetch Now'
                                     }
                                     setLogs([])
+                                    setUpdatedConfig('');
+                                    setEditCampaign(false);
                                     showAndSetCustomerData(name)
                                 }}>{name}</Accordion.Header>
                                 <Accordion.Body>
