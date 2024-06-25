@@ -38,13 +38,14 @@ const CsvUploader = ({ onUpload }) => {
     const saveDataToFirebase = async (e) => {
         e.preventDefault()
         const dataToSave = {}
-        console.log(csvData,'csvData')
+        console.log(csvData, 'csvData')
         csvData.forEach(record => {
-            const contactNumber = record['Number'] ||record['Phone']
-            if (contactNumber) {
+            let contactNumber = record['Number'] || record['Phone']
+            contactNumber = contactNumber.trim().replace(' ','')
+            if (contactNumber && contactNumber.length > 0 && !isNaN(Number(contactNumber))) {
                 dataToSave[contactNumber] = record
             }
-            console.log(record)
+            // console.log(record)
         })
         if (Object.keys(dataToSave).length > 0) {
             const dataRef = ref(firebaseDb, 'whatsapp-customers/data/' + fileName.replace('.csv', '')); // Create unique reference

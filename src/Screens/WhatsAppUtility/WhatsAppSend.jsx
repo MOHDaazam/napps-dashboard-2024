@@ -386,8 +386,12 @@ const WhatsAppSend = (props) => {
         if (Number) {
             Phone = Number
         }
+        Phone = Phone.trim().replace(' ', '')
         const last10Digits = Phone.slice(-10);
-        const payload = { number: stdCode + last10Digits, message };
+        const payload = {
+            number: String(Phone).length > 11 && [...Phone][0] !== '0' ? Phone : (stdCode + last10Digits),
+            message
+        };
         if (!sendOnlyText) {
             payload.caption = message
         }
