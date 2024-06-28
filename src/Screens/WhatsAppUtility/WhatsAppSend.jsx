@@ -19,6 +19,7 @@ const Configuration = () => {
     const [sendOnlyText, setSendOnlyText] = useState(false);
     const [stdCode, setStdCode] = useState('91');
     const [message, setMessage] = useState('');
+    const [senderIds, setSenderIds] = useState('');
     const [options, setOptions] = useState([]);
     const [selectedImages, setImages] = useState([]);
     const [serviceUrl, setServiceUrl] = useState('');
@@ -82,6 +83,7 @@ const Configuration = () => {
             setOptions([])
             setImages([])
             setServiceUrl('')
+            setSenderIds('')
         }
     }
 
@@ -106,7 +108,8 @@ const Configuration = () => {
             stdCode,
             message,
             endsTo,
-            serviceUrl
+            serviceUrl,
+            senderIds
         };
         await saveConfigurationToDb(config)
     };
@@ -196,6 +199,11 @@ const Configuration = () => {
             <FormGroup className='field-group' controlId="breatheFor">
                 <FormLabel>Napps Whatsapp Service URL</FormLabel>
                 <input className='form-control' type="text" value={serviceUrl} onChange={(e) => setServiceUrl(e.target.value)} autocomplete="on" />
+            </FormGroup>
+            <FormGroup className='field-group' controlId="breatheFor">
+                <FormLabel>Sender Ids of QR Code (comma separated, if many)</FormLabel>
+                <input className='form-control' placeholder='eg: azam-napps,yunus-aonlaonline,anas-napps'
+                    type="text" value={senderIds} onChange={(e) => setSenderIds(e.target.value)} autocomplete="on" />
             </FormGroup>
             <br />
             <Button variant="primary" type="submit">
@@ -381,7 +389,7 @@ const WhatsAppSend = (props) => {
 
     // Function to send a message to a customer
     const sendMessage = async (customer, campaignConfig, index,) => {
-        const { stdCode, message, serviceUrl, breathOn, breatheFor, sendOnlyText, images } = campaignConfig;
+        const { stdCode, message, serviceUrl, breathOn, breatheFor, sendOnlyText, images, senderIds } = campaignConfig;
         let { Phone, Name, Number } = customer; // Assuming message property exists in customer data
         if (Number) {
             Phone = Number
@@ -398,8 +406,18 @@ const WhatsAppSend = (props) => {
         if (images) {
             payload.images = images
         }
+        const senderIdsArray = senderIds.split(',')
+        // Get the current senderId based on index
+        const currentSenderId = senderIdsArray[index % senderIdsArray.length]; // Using modulo to cycle through ids
+
+        // Use currentSenderId in your payload or wherever needed
+        payload.sender = currentSenderId;
         const sendMe = async (sendAt) => {
             await new Promise((resolve, reject) => {
+                if (senderIdsArray.length === 0) {
+                    alert('Failed, No sender found! Add "senderIds"')
+                    reject(new Error(' sender found!'));
+                }
                 const timeout = setTimeout(async () => {
                     console.log(sendMessageAbortController.signal.aborted, 'sendMessageAbortController.signal.aborted')
                     sendMessageAbortController.signal.addEventListener('abort', () => {
@@ -418,7 +436,12 @@ const WhatsAppSend = (props) => {
                     const campaignConfigPath = 'whatsapp-campaign/saved/' + campaignConfig.campaignName + '/config/startsFrom';
                     try {
                         response = await axios.post(`${serviceUrl}/${!sendOnlyText ? 'send-media' : 'send-message'}`,
-                            payload, { signal: sendMessageAbortController.signal });
+                            payload, {
+                                signal: sendMessageAbortController.signal,
+                            headers: { 
+                                "ngrok-skip-browser-warning": "69420"
+                            },
+                        });
                     } catch (error) {
                         if (error.name !== 'AbortError') {
                             console.log(error, 'error');
