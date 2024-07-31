@@ -1,3 +1,5 @@
+import axios from "axios";
+
 // Convert image to Base64
 export function imageToBase64(image) {
     return new Promise((resolve, reject) => {
@@ -29,3 +31,32 @@ export function base64ToFile(base64Image) {
     }
     return new File([ab], "image.jpg", { type: "image/jpeg" });
 }
+
+export const pingServer = async (url) => {
+    try {
+        const startTime = new Date();
+        const response = await axios.head(url);
+        const endTime = new Date();
+        const latency = endTime - startTime;
+        if (response.status > 200) {
+            return {
+                active: true,
+                latency: latency
+            };
+        }
+    } catch (error) {
+        console.error('Error pinging server:', error.message);
+        if (error.message.toLowerCase().includes('network error')) {
+            return {
+                active: false,
+                error: error.message
+            };
+        } else {
+            return {
+                active: true,
+                latency: 0
+            };
+        }
+
+    }
+};

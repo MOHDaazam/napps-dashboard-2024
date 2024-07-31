@@ -7,7 +7,7 @@ import ReactJsonPretty from 'react-json-pretty';
 import { ref, push, update, get } from 'firebase/database'
 import 'firebase/database'; // Required for Realtime Database
 import './index.css'; // Assuming you have a CSS file for styling
-import { firebaseDb } from '../../firebase';
+import { nappsFirebase } from '../../firebase';
 
 
 // Replace with your Firebase project configuration
@@ -40,16 +40,17 @@ const CsvUploader = ({ onUpload }) => {
         const dataToSave = {}
         console.log(csvData, 'csvData')
         csvData.forEach(record => {
-            let contactNumber = record['Number'] || record['Phone']
-            contactNumber = contactNumber.trim().replace(' ','')
+            let contactNumber = record['Number'] || record['Number1'] || record['Number2'] || record['Number3'] || record['Phone']
+            console.log(contactNumber, 'contactNumber===>while uploading')
+            contactNumber = contactNumber?.trim().replace(' ', '') || undefined
             if (contactNumber && contactNumber.length > 0 && !isNaN(Number(contactNumber))) {
                 dataToSave[contactNumber] = record
             }
             // console.log(record)
         })
         if (Object.keys(dataToSave).length > 0) {
-            const dataRef = ref(firebaseDb, 'whatsapp-customers/data/' + fileName.replace('.csv', '')); // Create unique reference
-            const dataListRef = ref(firebaseDb, 'whatsapp-customers/names'); // Create unique reference
+            const dataRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-customers/data/' + fileName.replace('.csv', '')); // Create unique reference
+            const dataListRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-customers/names'); // Create unique reference
             let listOfNames = await get(dataListRef)
             if (listOfNames.val()) {
                 listOfNames = listOfNames.val()
@@ -126,7 +127,7 @@ const WhatsApUploadData = () => {
     const handleSelect = (key) => setActiveKey(key);
 
     const getAllFilesName = async () => {
-        const dataListRef = ref(firebaseDb, 'whatsapp-customers/names'); // Create unique reference
+        const dataListRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-customers/names'); // Create unique reference
         const listOfNames = await get(dataListRef)
         console.log(listOfNames.val())
         if (listOfNames.val())

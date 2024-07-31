@@ -1,21 +1,65 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios'
-import { Form, FormGroup, FormLabel, input, Button, Table, ProgressBar, FormFormLabel, Accordion, Card, Row, Col, } from 'react-bootstrap';
-import { firebaseDb, firebaseStorage } from '../../firebase';
+import { Form, FormGroup, FormLabel, input, Button, Table, ProgressBar, FormFormLabel, Accordion, Card, Row, Col, Modal } from 'react-bootstrap';
+import { nappsFirebase } from '../../firebase';
 import { child, get, onValue, orderByValue, ref, remove, set, update } from 'firebase/database';
 import { getDownloadURL, getStorage, uploadBytes, ref as stRef } from 'firebase/storage';
+import { pingServer } from './utils';
+
+
+
+const renderChooseMessage = (handler, lgShow, setLgShow, messages) => (
+    <>
+        <Button className='btn btn-danger' onClick={() => setLgShow(true)}>Choose Message</Button><br /><br />
+        <Modal
+            size="lg"
+            show={lgShow}
+            onHide={() => setLgShow(false)}
+            aria-labelledby="example-modal-sizes-title-lg"
+        >
+            <Modal.Header closeButton>
+                <Modal.Title id="example-modal-sizes-title-lg">
+                    Choose Message
+                </Modal.Title>
+            </Modal.Header>
+            <Modal.Body style={{ overflowY: 'auto', height: '80vh' }}>
+                <div className="row">
+                    {messages.map((msg) => (
+                        <div key={msg.id} className="col-12" onClick={() => handler(msg)} style={{ cursor: 'pointer' }}>
+                            <div className="card">
+                                <div className="card-body" style={{ paddingTop: '20px' }}>
+                                    <p className="card-text">{msg.text}</p>
+                                    <div className="card-img">
+                                        {msg?.images?.map((url, index) => (
+                                            <div key={index} className="d-flex align-items-center mb-2">
+                                                <img src={url} alt={`img-${index}`} className="img-thumbnail" width="100" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </Modal.Body>
+            <Modal.Footer>
+                <Button onClick={() => setLgShow(false)}>Close</Button>
+            </Modal.Footer>
+        </Modal>
+    </>
+)
 
 const Configuration = () => {
     const [campaignName, setCampaignName] = useState('');
     const [fileName, setFileName] = useState('');
-    const [maxCount, setMaxCount] = useState(500);
+    const [maxCount, setMaxCount] = useState(700);
     const [howManyRounds, setHowManyRounds] = useState(1);
     const [deleteMsg, setDeleteMsg] = useState(true);
     const [startsFrom, setStartsFrom] = useState(0);
-    const [endsTo, setEndsTo] = useState(499);
+    const [endsTo, setEndsTo] = useState(699);
     const [generateOnlyReport, setGenerateOnlyReport] = useState(false);
     const [breathOn, setBreathOn] = useState(100);
-    const [breatheFor, setBreatheFor] = useState(8);
+    const [breatheFor, setBreatheFor] = useState(4);
     const [sendOnlyText, setSendOnlyText] = useState(false);
     const [stdCode, setStdCode] = useState('91');
     const [message, setMessage] = useState('');
@@ -23,11 +67,13 @@ const Configuration = () => {
     const [options, setOptions] = useState([]);
     const [selectedImages, setImages] = useState([]);
     const [serviceUrl, setServiceUrl] = useState('');
+    const [lgShow, setLgShow] = useState(false);
+    const [messages, setMessages] = useState([]);
     const storage = getStorage();
 
     // Function to fetch options from Firebase
     const fetchOptions = async () => {
-        const dbRef = ref(firebaseDb, 'whatsapp-customers/names'); // Create unique reference
+        const dbRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-customers/names'); // Create unique reference
         let listOfNames = await get(dbRef)
         if (listOfNames.val()) {
             listOfNames = listOfNames.val()
@@ -36,27 +82,45 @@ const Configuration = () => {
         }
     };
 
+
+    const fetchMessages = async () => {
+        const messagesRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-messages/');
+        const snapshot = await get(messagesRef);
+
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            const fetchedMessages = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+            setMessages(fetchedMessages);
+        }
+    };
+
+    const setMessageAndImages = async (msg) => {
+        setMessage(msg.text)
+        setImages(msg.images)
+        setLgShow(false)
+    }
     // Fetch options from Firebase when component mounts
     useEffect(() => {
         fetchOptions();
+        fetchMessages()
     }, []);
 
 
     const saveConfigurationToDb = async (campaign) => {
-        const campaignConfigRef = ref(firebaseDb, 'whatsapp-campaign/saved/' + campaign.campaignName + '/config'); // Create unique reference
-        const campaignCustomerRef = ref(firebaseDb, 'whatsapp-campaign/saved/' + campaign.campaignName + '/customers');
-        const activeCampaignsRef = ref(firebaseDb, 'whatsapp-campaign/execution');
+        const campaignConfigRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-campaign/saved/' + campaign.campaignName + '/config'); // Create unique reference
+        const campaignCustomerRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-campaign/saved/' + campaign.campaignName + '/customers');
+        const activeCampaignsRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-campaign/execution');
         let activeCampaigns = await (await get(activeCampaignsRef)).val()
         if (selectedImages) {
-            const publicImageUrls = await Promise.all(selectedImages.map(async (image) => {
-                const filename = `${Math.random().toString(36).substring(2, 15)}.${image.type.split('/')[1]}`;
-                const storageRef = stRef(storage, `whatsapp-images/${filename}`);
-                const uploadTask = await uploadBytes(storageRef, image);
-                return getDownloadURL(uploadTask.ref);
-            }));
-            campaign.images = publicImageUrls;
+            // const publicImageUrls = await Promise.all(selectedImages.map(async (image) => {
+            //     const filename = `${Math.random().toString(36).substring(2, 15)}.${image.type.split('/')[1]}`;
+            //     const storageRef = stRef(storage, `whatsapp-images/${filename}`);
+            //     const uploadTask = await uploadBytes(storageRef, image);
+            //     return getDownloadURL(uploadTask.ref);
+            // }));
+            campaign.images = selectedImages;
         }
-        const getCustomersDataRefByFileName = ref(firebaseDb, 'whatsapp-customers/data/' + campaign.fileName); // Create unique reference
+        const getCustomersDataRefByFileName = ref((await nappsFirebase()).firebaseDb, 'whatsapp-customers/data/' + campaign.fileName); // Create unique reference
         let customerDetails = await get(getCustomersDataRefByFileName)
         if (customerDetails.val()) {
             customerDetails = customerDetails.val()
@@ -113,6 +177,7 @@ const Configuration = () => {
         };
         await saveConfigurationToDb(config)
     };
+
 
 
     return (
@@ -180,11 +245,13 @@ const Configuration = () => {
                 <FormLabel>Standard Code for Phone Numbers</FormLabel>
                 <input className='form-control' type="text" value={stdCode} onChange={(e) => setStdCode(e.target.value)} autocomplete="on" />
             </FormGroup>
+
             <FormGroup className='field-group' controlId="message">
                 <FormLabel>Message Content</FormLabel>
                 <textarea
                     className='form-control'
                     autocomplete="on"
+                    disabled="true"
                     type="checkbox"
                     rows="7"
                     value={message}
@@ -192,18 +259,23 @@ const Configuration = () => {
                     required
                 />
             </FormGroup>
+            {/*
             <FormGroup className='field-group' controlId="image">
                 <FormLabel>Choose image if any (optional)</FormLabel>
                 <input className='form-control' type="file" accept="image/jpeg, image/png" onChange={handleImageChange} multiple />
-            </FormGroup>
+            </FormGroup> */}
+
+            {renderChooseMessage(setMessageAndImages, lgShow, setLgShow, messages)}
             <FormGroup className='field-group' controlId="breatheFor">
                 <FormLabel>Napps Whatsapp Service URL</FormLabel>
                 <input className='form-control' type="text" value={serviceUrl} onChange={(e) => setServiceUrl(e.target.value)} autocomplete="on" />
+                <span style={{ color: 'orange' }}>https://bream-charmed-personally.ngrok-free.app/</span>
             </FormGroup>
             <FormGroup className='field-group' controlId="breatheFor">
                 <FormLabel>Sender Ids of QR Code (comma separated, if many)</FormLabel>
                 <input className='form-control' placeholder='eg: azam-napps,yunus-aonlaonline,anas-napps'
                     type="text" value={senderIds} onChange={(e) => setSenderIds(e.target.value)} autocomplete="on" />
+                <span style={{ color: 'orange' }}>azam-napps,yunus-aonlaonline,anas-napps</span>
             </FormGroup>
             <br />
             <Button variant="primary" type="submit">
@@ -274,11 +346,55 @@ const WhatsAppSend = (props) => {
     const [updatedConfigJSON, setUpdatedConfig] = useState('');
     const [isEditingCampaign, setEditCampaign] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [lgShow, setLgShow] = useState(false);
     const audioRef = useRef(null); // Reference to the ReactAudioPlayer component
     const sendCounterRef = useRef(0)
     const totalPhoneNumbersRef = useRef(0)
+    const [message, setMessage] = useState('');
+    const [messages, setMessages] = useState([]);
+    const [selectedImages, setImages] = useState([]);
+
+    const fetchMessages = async () => {
+        const messagesRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-messages/');
+        const snapshot = await get(messagesRef);
+
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            const fetchedMessages = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+            setMessages(fetchedMessages);
+        }
+    };
+
+    const updatedConfigSave = async (parsedData = null) => {
+        const campaignConfigRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-campaign/saved/' + selectedCampaign + '/config');
+        try {
+            await set(campaignConfigRef, parsedData ? parsedData : JSON.parse(updatedConfigJSON))
+            setEditCampaign(false)
+        } catch (e) {
+            alert(String(e))
+        }
 
 
+    }
+
+    const setMessageAndImages = async (msg) => {
+        const configData = campaignsData[selectedCampaign]?.config
+        if (configData) {
+            const dataToSave = configData
+            console.log(dataToSave, 'dataToSave')
+            if (msg.images) {
+                dataToSave.images = msg.images
+                dataToSave.sendOnlyText = false
+            } else {
+                dataToSave.sendOnlyText = true
+                delete dataToSave.images
+            }
+            dataToSave.message = msg.text
+            updatedConfigSave(dataToSave)
+            setLgShow(false)
+            alert('Updated!')
+        }
+    }
 
     const handlePlayPause = () => {
         if (isPlaying) {
@@ -295,21 +411,21 @@ const WhatsAppSend = (props) => {
         setIsPlaying(false);
     };
 
-    const updatedConfigSave = async () => {
-        const campaignConfigRef = ref(firebaseDb, 'whatsapp-campaign/saved/' + selectedCampaign + '/config');
-        try {
-            await set(campaignConfigRef, JSON.parse(updatedConfigJSON))
-            setEditCampaign(false)
-        } catch (e) {
-            alert(String(e))
+    const resetCuustomers = async (configuration) => {
+        const status = window.confirm("You are resetting customers data, previously sent message will get choose message.")
+        if (status) {
+            const dataListRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-customers/data/' + configuration.config.fileName);
+            const customersFreshData = await (await get(dataListRef)).val()
+            console.log(customersFreshData)
+            const campaignCustomerRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-campaign/saved/' + configuration.config.campaignName + '/customers');
+            await set(campaignCustomerRef, customersFreshData)
+            alert('Reset completed!')
         }
-
-
     }
 
-    const showAndSetCustomerData = (campaignName, fetchConfigOnly = true) => {
-        const campaignConfigRef = ref(firebaseDb, 'whatsapp-campaign/saved/' + campaignName + '/config'); // Create unique reference
-        const campaignCustomerRef = ref(firebaseDb, 'whatsapp-campaign/saved/' + campaignName + '/customers');
+    const showAndSetCustomerData = async (campaignName, fetchConfigOnly = true) => {
+        const campaignConfigRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-campaign/saved/' + campaignName + '/config'); // Create unique reference
+        const campaignCustomerRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-campaign/saved/' + campaignName + '/customers');
         let customers = {}
         let configCamp = {}
         if (selectedCampaign !== campaignName) {
@@ -371,30 +487,29 @@ const WhatsAppSend = (props) => {
     }
     useEffect(() => {
         getAndSetCampaigns()
+        fetchMessages()
     }, []);
 
-    const deleteCampaign = () => {
+    const deleteCampaign = async () => {
         const status = window.confirm('You are deleting this campaign!')
         if (status) {
-            const activeCampaignsRef = ref(firebaseDb, 'whatsapp-campaign/saved/' + selectedCampaign);
+            const activeCampaignsRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-campaign/saved/' + selectedCampaign);
             findAndDeleteByValue('whatsapp-campaign/execution', selectedCampaign)
             remove(activeCampaignsRef)
         }
     }
 
     const getCampaignNames = async () => {
-        const activeCampaignsRef = ref(firebaseDb, 'whatsapp-campaign/execution');
+        const activeCampaignsRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-campaign/execution');
         return await (await get(activeCampaignsRef)).val() || []
     }
 
     // Function to send a message to a customer
-    const sendMessage = async (customer, campaignConfig, index,) => {
+    const sendMessage = async (customer, campaignConfig, index, customerNumber) => {
         const { stdCode, message, serviceUrl, breathOn, breatheFor, sendOnlyText, images, senderIds } = campaignConfig;
-        let { Phone, Name, Number } = customer; // Assuming message property exists in customer data
-        if (Number) {
-            Phone = Number
-        }
-        Phone = Phone.trim().replace(' ', '')
+        let { Name, } = customer; // Assuming message property exists in customer data
+        console.log(customerNumber, 'customerNumbercustomerNumber')
+        const Phone = customerNumber.trim().replace(' ', '')
         const last10Digits = Phone.slice(-10);
         const payload = {
             number: String(Phone).length > 11 && [...Phone][0] !== '0' ? Phone : (stdCode + last10Digits),
@@ -437,18 +552,25 @@ const WhatsAppSend = (props) => {
                     try {
                         response = await axios.post(`${serviceUrl}/${!sendOnlyText ? 'send-media' : 'send-message'}`,
                             payload, {
-                                signal: sendMessageAbortController.signal,
-                            headers: { 
+                            signal: sendMessageAbortController.signal,
+                            headers: {
                                 "ngrok-skip-browser-warning": "69420"
                             },
                         });
                     } catch (error) {
                         if (error.name !== 'AbortError') {
                             console.log(error, 'error');
+                            if (error?.code === "ERR_NETWORK") {
+                                alert('Server not Running, stopped!')
+                                setIsPlaying(false)
+                                setLastMessageTo('Server not Responding, stopped!')
+                                sendMessageAbortController.abort()
+                            }
                             if (error?.message.includes('422')) {
-                                const campaignCustomerRef = ref(firebaseDb, campaignPath);
-                                await set(campaignCustomerRef, "Yes")
-                                const campaignConfigCustomerRef = ref(firebaseDb, campaignConfigPath);
+                                const campaignCustomerRef = ref((await nappsFirebase()).firebaseDb, campaignPath);
+                                const sentCurrentValue = await (await get(campaignCustomerRef)).val()
+                                await set(campaignCustomerRef, sentCurrentValue || 0 + ',' + campaignConfig.howManyRounds)
+                                const campaignConfigCustomerRef = ref((await nappsFirebase()).firebaseDb, campaignConfigPath);
                                 await set(campaignConfigCustomerRef, index + 1)
                             }
                             setLastMessageTo(Phone + " " + (error?.message.includes('422') && "Not on whatsapp!"));
@@ -467,16 +589,18 @@ const WhatsAppSend = (props) => {
                     if (status) {
                         setLastMessageTo(Phone + ' sent!');
                         setLogs([...logs, { message: `Success :: ${Name} :: ${Phone} :: ${getDate()}` }]);
-                        const campaignCustomerRef = ref(firebaseDb, campaignPath);
-                        await set(campaignCustomerRef, "Yes")
-                        const campaignConfigCustomerRef = ref(firebaseDb, campaignConfigPath);
+                        const campaignCustomerRef = ref((await nappsFirebase()).firebaseDb, campaignPath);
+                        const sentCurrentValue = await (await get(campaignCustomerRef)).val()
+                        await set(campaignCustomerRef, sentCurrentValue || 0 + ',' + campaignConfig.howManyRounds)
+                        const campaignConfigCustomerRef = ref((await nappsFirebase()).firebaseDb, campaignConfigPath);
                         await set(campaignConfigCustomerRef, index + 1)
                     } else if (!status && typeof status !== 'undefined') {
                         console.log(response);
                         if (response.data?.message.includes('The number is not registered')) {
-                            const campaignCustomerRef = ref(firebaseDb, campaignPath);
-                            await set(campaignCustomerRef, "Yes")
-                            const campaignConfigCustomerRef = ref(firebaseDb, campaignConfigPath);
+                            const campaignCustomerRef = ref((await nappsFirebase()).firebaseDb, campaignPath);
+                            const sentCurrentValue = await (await get(campaignCustomerRef)).val()
+                            await set(campaignCustomerRef, sentCurrentValue || 0 + ',' + campaignConfig.howManyRounds)
+                            const campaignConfigCustomerRef = ref((await nappsFirebase()).firebaseDb, campaignConfigPath);
                             await set(campaignConfigCustomerRef, index + 1)
                         }
                         setLastMessageTo(Phone + response.data?.message);
@@ -543,8 +667,21 @@ const WhatsAppSend = (props) => {
         activePromisesOf[selectedCampaign] = true
         audioRef.current = 'pause';
         setLastMessageTo('Started...');
-        const campaignConfigRef = ref(firebaseDb, 'whatsapp-campaign/saved/' + selectedCampaign + '/config'); // Create unique reference
+        const campaignConfigRef = ref((await nappsFirebase()).firebaseDb, 'whatsapp-campaign/saved/' + selectedCampaign + '/config'); // Create unique reference
         const campaignConfig = (await get(campaignConfigRef)).val()
+
+        const result = await pingServer(campaignConfig.serviceUrl);
+        if (result.active) {
+            console.log(`Server is active. Latency: ${result.latency}ms`);
+        } else {
+            alert(`Server is not active : ${campaignConfig.serviceUrl}`)
+            console.log(`Server is not active. Status: ${result.status || 'Unknown'}`);
+            setIsPlaying(false)
+            setLastMessageTo('Server not active!')
+            sendMessageAbortController.abort()
+            return;
+        }
+
         const selectedCustomers = _campaignsData['customers']
         const sortedNumbers = Object.keys(_campaignsData['customers']).sort();
 
@@ -571,8 +708,8 @@ const WhatsAppSend = (props) => {
                 const customerNumber = sortedNumbers[i];
                 const customer = selectedCustomers[customerNumber]
                 console.log(customer)
-                if ((!customer?.sent_cycle || customer?.sent_cycle < campaignConfig.howManyRounds) && !('Sent' in customer)) {
-                    await sendMessage(customer, campaignConfig, i, selectedCustomers);
+                if ((!customer?.sent_cycle || customer?.sent_cycle < campaignConfig.howManyRounds) && (!('Sent' in customer) || !customer['Sent'].includes(campaignConfig.howManyRounds))) {
+                    await sendMessage(customer, campaignConfig, i, customerNumber);
                 } else if ('Sent' in customer) {
                     setLastMessageTo(customerNumber + ' already sent, skipping!');
                 }
@@ -636,32 +773,40 @@ const WhatsAppSend = (props) => {
                                     setLogs([])
                                     setUpdatedConfig('');
                                     setEditCampaign(false);
+                                    document.title = name
                                     showAndSetCustomerData(name)
                                 }}>{name}</Accordion.Header>
                                 <Accordion.Body>
-                                    <Row className="justify-content-end mt-3">
-                                        <Col xs={6}>
+                                    <div style={{ display: 'flex' }}>
+                                        <div xs={6}>
                                             <span>Status : <span style={{ color: 'blue', fontWeight: '600' }}>{lastMessageTo}</span></span>
-                                        </Col>
-                                        <Col xs={2}>
-                                            <Button variant="primary" onClick={handlePlayPause} size="sm">
-                                                {isPlaying ? 'Pause' : 'Play'}
-                                            </Button>
-                                        </Col>
-                                        <Col xs={2}>
-                                            <Button variant="danger" onClick={handleStop} size="sm">
-                                                Stop
-                                            </Button>
-                                        </Col>
-                                        <Col xs={2}>
-                                            <Button variant="danger" onClick={deleteCampaign} size="sm">
-                                                Delete Campaign
-                                            </Button>
-                                        </Col>
-                                    </Row><br />
-                                    <Button className='brn btn-warning' onClick={() => { showAndSetCustomerData(name, false) }}>Fetch Customers and Message Sent Status</Button><br /><br />
-                                    <Button onClick={() => { setEditCampaign(!isEditingCampaign) }}>{isEditingCampaign ? 'Cancel Editing' : 'Edit Campaign Setting'}</Button><br /><br />
-                                    {/* <p>{JSON.stringify(campaignsData[selectedCampaign]?.config)}</p> */}
+                                        </div>
+                                        <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px' }}>
+                                            <div xs={2}>
+                                                <Button variant="primary" onClick={handlePlayPause} size="sm">
+                                                    {isPlaying ? 'Pause' : 'Play'}
+                                                </Button>
+                                            </div>
+                                            <div xs={2}>
+                                                <Button variant="danger" onClick={handleStop} size="sm">
+                                                    Stop
+                                                </Button>
+                                            </div>
+                                            <div xs={2}>
+                                                <Button variant="danger" onClick={deleteCampaign} size="sm">
+                                                    Delete Campaign
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div><br />
+                                    <div style={{ display: 'flex', justifyContent: 'normal', gap: '10px' }}>
+                                        <Button className='btn btn-warning'
+                                            onClick={() => { showAndSetCustomerData(name, false) }}>
+                                            Fetch Customers</Button><br /><br />
+                                        {renderChooseMessage(setMessageAndImages, lgShow, setLgShow, messages)}
+                                        <Button onClick={() => { setEditCampaign(!isEditingCampaign) }}>{isEditingCampaign ? 'Cancel Editing' : 'Edit Campaign Setting'}</Button><br /><br />
+                                        <Button className='btn btn-warning' onClick={() => { resetCuustomers(campaignsData[selectedCampaign]) }}>Reset Customers</Button><br /><br />
+                                    </div><br />
                                     {isEditingCampaign ?
                                         <>
                                             <p style={{ color: 'orange' }}>Please be cautious, don't change "campaignName" ever!</p>
@@ -703,7 +848,7 @@ export default WhatsAppSend;
 // Function to find the index of a campaign by its value and delete it
 async function findAndDeleteByValue(campaignPath, selectedCampaignValue) {
     console.log(selectedCampaignValue, campaignPath)
-    const campaignRef = ref(firebaseDb, campaignPath);
+    const campaignRef = ref((await nappsFirebase()).firebaseDb, campaignPath);
 
 
     // Fetch the data
@@ -751,3 +896,5 @@ function getDate() {
     };
     return now.toLocaleDateString('en-US', options);
 }
+
+
