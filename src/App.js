@@ -32,7 +32,7 @@ function App() {
           <Route path="/whatsapp-send" element={<WhatsAppSend />} />
           <Route path="/whatsapp-data-file" element={<WhatsApUploadData />} />
           <Route path="/whatsapp-message" element={<WhatsAppMessage />} />
-          <Route path="/whatsapp-qr-code-login" element={<IframeComponent src="http://ec2-54-226-225-50.compute-1.amazonaws.com:8000" />} />
+          <Route path="/whatsapp-qr-code-login" element={<IframeComponent src="https://bream-charmed-personally.ngrok-free.app" />} />
           <Route path="/aonla-online-ongoing-orders" element={<OnGoingOrders/>} />
           <Route path="/aonla-online-add-shop" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/add-shop" />} />
           <Route path="/aonla-online-add-vehicle" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/add-vehicle" />} />
