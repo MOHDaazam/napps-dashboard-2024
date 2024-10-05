@@ -23,6 +23,7 @@ function App() {
     setWidthMain(widthSideBar)
     setInnerWidthMain(window.innerWidth)
   })
+  
   return (
     <BrowserRouter>
       <Header />
@@ -39,6 +40,7 @@ function App() {
           <Route path="/aonla-online-shop-auto" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/shop-auto-opener" />} />
           <Route path="/aonla-online-vehicle-service" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/vehicle-service" />} />
           <Route path="/aonla-online-refund-wallet" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/refund-wallet" />} />
+          <Route path="/aonla-online-current-orders" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/current-orders" />} />
           <Route path="/login" element={<Login />} />
         </Routes>
       </main>

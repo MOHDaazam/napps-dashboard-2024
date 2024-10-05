@@ -71,6 +71,12 @@ const sidebar = () => {
                             <span>Refund Wallet Amount</span>
                         </Link>
                     </li>
+                    <li className="nav-item">
+                        <Link className="nav-link collapsed" to='/aonla-online-current-orders'>
+                            <i className="bi bi-file-earmark" />
+                            <span>Current Orders</span>
+                        </Link>
+                    </li>
 
                 </ul>
             </aside >
