@@ -41,6 +41,7 @@ function App() {
           <Route path="/aonla-online-vehicle-service" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/vehicle-service" />} />
           <Route path="/aonla-online-refund-wallet" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/refund-wallet" />} />
           <Route path="/aonla-online-current-orders" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/current-orders" />} />
+          <Route path="/aonla-online-manage-products" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/manage-products" />} />
           <Route path="/login" element={<Login />} />
         </Routes>
       </main>

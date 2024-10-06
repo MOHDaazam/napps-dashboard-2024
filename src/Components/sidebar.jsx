@@ -77,7 +77,12 @@ const sidebar = () => {
                             <span>Current Orders</span>
                         </Link>
                     </li>
-
+                    <li className="nav-item">
+                        <Link className="nav-link collapsed" to='/aonla-online-manage-products'>
+                            <i className="bi bi-file-earmark" />
+                            <span>Current Orders</span>
+                        </Link>
+                    </li>
                 </ul>
             </aside >
 
