@@ -42,6 +42,8 @@ function App() {
           <Route path="/aonla-online-refund-wallet" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/refund-wallet" />} />
           <Route path="/aonla-online-current-orders" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/current-orders" />} />
           <Route path="/aonla-online-manage-products" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/manage-products" />} />
+          <Route path="/aonla-online-Offline-Menu" element={<IframeComponent src="https://www.canva.com/design/DAGJUDF73y0/aP-VlYYPo7sPSRXHYmR7Bg/view?utm_content=DAGJUDF73y0&utm_campaign=designshare&utm_medium=link&utm_source=editor#1" />} />
+          <Route path="/aonla-online-Cron-Jobs" element={<IframeComponent src="https://console.cron-job.org/login" />} />
           <Route path="/login" element={<Login />} />
         </Routes>
       </main>

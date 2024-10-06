@@ -80,8 +80,22 @@ const sidebar = () => {
                     <li className="nav-item">
                         <Link className="nav-link collapsed" to='/aonla-online-manage-products'>
                             <i className="bi bi-file-earmark" />
-                            <span>manage products</span>
+                            <span>Manage Products</span>
                         </Link>
+                    </li>
+                    <li className="nav-item">
+                        <Link className="nav-link collapsed" to='/aonla-online-Offline-Menu'>
+                            <i className="bi bi-file-earmark" />
+                            <span>Offline Menu</span>
+                        </Link>
+                        
+                    </li>
+                    <li className="nav-item">
+                        <Link className="nav-link collapsed" to='/aonla-online-Cron-Jobs'>
+                            <i className="bi bi-file-earmark" />
+                            <span>Cron Jobs</span>
+                        </Link>
+                        
                     </li>
                 </ul>
             </aside >
