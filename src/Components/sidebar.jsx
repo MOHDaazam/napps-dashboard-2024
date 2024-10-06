@@ -80,7 +80,7 @@ const sidebar = () => {
                     <li className="nav-item">
                         <Link className="nav-link collapsed" to='/aonla-online-manage-products'>
                             <i className="bi bi-file-earmark" />
-                            <span>Current Orders</span>
+                            <span>manage products</span>
                         </Link>
                     </li>
                 </ul>
