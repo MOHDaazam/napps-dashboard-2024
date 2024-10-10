@@ -97,6 +97,13 @@ const sidebar = () => {
                         </Link>
                         
                     </li>
+                    <li className="nav-item">
+                        <Link className="nav-link collapsed" to='/aonla-online- Google-Analytics'>
+                            <i className="bi bi-file-earmark" />
+                            <span> Google Analytics</span>
+                        </Link>
+                        
+                    </li>
                 </ul>
             </aside >
 
