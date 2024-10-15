@@ -44,7 +44,7 @@ function App() {
           <Route path="/aonla-online-manage-products" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/manage-products" />} />
           <Route path="/aonla-online-Offline-Menu" element={<IframeComponent src="https://www.canva.com/design/DAGJUDF73y0/aP-VlYYPo7sPSRXHYmR7Bg/view?utm_content=DAGJUDF73y0&utm_campaign=designshare&utm_medium=link&utm_source=editor#1" />} />
           <Route path="/aonla-online-Cron-Jobs" element={<IframeComponent src="https://console.cron-job.org/login" />} />
-          <Route path="/aonla-online- Google-Analytics" element={<IframeComponent src="https://lookerstudio.google.com/embed/reporting/4029f085-c8bb-4e2c-ab2d-9a30e763f5d1/page/p_ev5o6t54bd" />} />
+          <Route path="/aonla-online- Google-Analytics" element={<IframeComponent src="https://lookerstudio.google.com/embed/reporting/aa187d67-5e5c-4654-9778-1d939046b0ca/page/kIV1C" />} />
           <Route path="/login" element={<Login />} />
         </Routes>
       </main>
