@@ -35,13 +35,13 @@ function App() {
           <Route path="/whatsapp-message" element={<WhatsAppMessage />} />
           <Route path="/whatsapp-qr-code-login" element={<IframeComponent src="https://bream-charmed-personally.ngrok-free.app" />} />
           <Route path="/aonla-online-ongoing-orders" element={<OnGoingOrders/>} />
-          <Route path="/aonla-online-add-shop" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/add-shop" />} />
-          <Route path="/aonla-online-add-vehicle" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/add-vehicle" />} />
-          <Route path="/aonla-online-shop-auto" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/shop-auto-opener" />} />
-          <Route path="/aonla-online-vehicle-service" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/vehicle-service" />} />
-          <Route path="/aonla-online-refund-wallet" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/refund-wallet" />} />
-          <Route path="/aonla-online-current-orders" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/current-orders" />} />
-          <Route path="/aonla-online-manage-products" element={<IframeComponent src="https://salesmafiaonline.pythonanywhere.com/manage-products" />} />
+          <Route path="/aonla-online-add-shop" element={<IframeComponent src=" https://api-aonla-v1.vercel.app/add-shop" />} />
+          <Route path="/aonla-online-add-vehicle" element={<IframeComponent src=" https://api-aonla-v1.vercel.app/add-vehicle" />} />
+          <Route path="/aonla-online-shop-auto" element={<IframeComponent src=" https://api-aonla-v1.vercel.app/shop-auto-opener" />} />
+          <Route path="/aonla-online-vehicle-service" element={<IframeComponent src=" https://api-aonla-v1.vercel.app/vehicle-service" />} />
+          <Route path="/aonla-online-refund-wallet" element={<IframeComponent src=" https://api-aonla-v1.vercel.app/refund-wallet" />} />
+          <Route path="/aonla-online-current-orders" element={<IframeComponent src=" https://api-aonla-v1.vercel.app/current-orders" />} />
+          <Route path="/aonla-online-manage-products" element={<IframeComponent src=" https://api-aonla-v1.vercel.app/manage-products" />} />
           <Route path="/aonla-online-Offline-Menu" element={<IframeComponent src="https://www.canva.com/design/DAGJUDF73y0/aP-VlYYPo7sPSRXHYmR7Bg/view?utm_content=DAGJUDF73y0&utm_campaign=designshare&utm_medium=link&utm_source=editor#1" />} />
           <Route path="/aonla-online-Cron-Jobs" element={<IframeComponent src="https://console.cron-job.org/login" />} />
           <Route path="/aonla-online- Google-Analytics" element={<IframeComponent src="https://lookerstudio.google.com/embed/reporting/aa187d67-5e5c-4654-9778-1d939046b0ca/page/kIV1C" />} />
