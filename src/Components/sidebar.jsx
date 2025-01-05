@@ -104,6 +104,13 @@ const sidebar = () => {
                         </Link>
                         
                     </li>
+                    <li className="nav-item">
+                        <Link className="nav-link collapsed" to='/aonla-online- Point-of-Sale'>
+                            <i className="bi bi-file-earmark" />
+                            <span> Point of Sale</span>
+                        </Link>
+                        
+                    </li>
                 </ul>
             </aside >
 
